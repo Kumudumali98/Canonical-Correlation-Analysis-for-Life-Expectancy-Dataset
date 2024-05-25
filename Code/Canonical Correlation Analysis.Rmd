@@ -1,0 +1,127 @@
+---
+title: "Canonical Correlation Analysis"
+author: "S18827"
+date: "2024-05-08"
+output: html_document
+---
+```{r}
+library(tidyverse)
+library(corrplot)
+library(CCA)
+library(tidyr)
+library(ggplot2)
+library(GGally)
+library(psych)
+```
+
+```{r}
+crop <- read_csv("../Data/crop_yield.csv")
+fertilezer <- read_csv("../Data/fertilizer.csv")
+unique(crop$State)
+
+temp <- read_csv("../Data/Mean Temperature Data.csv")
+unique(temp$States)
+
+price <- read_csv("../Data/food_prices_ind.csv")
+unique(price$admin1)
+
+price <- price[-1,]
+```
+
+, Season == "Rabi"
+
+
+```{r} 
+# Filter rows where commodity is "Rice", select relevant columns, and extract year
+price_new <- price %>%
+  mutate(year = format(as.Date(date), "%Y"))%>%
+  filter(commodity == "Rice") %>%
+  dplyr ::select(c(year, admin1, price)) 
+
+# Remove rows with NA values in the price column
+price_new <- price_new[!is.na(price_new$price), ]
+
+# Convert the price column to numeric (if it's not already numeric)
+price_new$price <- as.numeric(price_new$price)
+
+# Remove rows with NA values in the price column (in case there were non-numeric values)
+price_new <- price_new[!is.na(price_new$price), ]
+
+# Calculate mean price for each year and administrative region
+price_new_final <- price_new %>%
+  group_by(year, admin1) %>%
+  summarise(mean_price = mean(price))
+```
+
+
+
+
+```{r}
+wheat <- crop %>% filter(Crop == "Rice")
+
+temp1 <- temp %>%
+  filter(Period %in% c("Winter", "Summer", "Annual")) 
+
+temp2 <- temp1[-c(3:98)]
+temp3 <- temp2 %>%
+  pivot_longer(cols = c(3:26), names_to = "Year", values_to = "Value") %>%
+  mutate(Period = ifelse(Period == "Summer", "summer_temp", ifelse(Period == "Winter","winter_temp", "Annual"))) %>%
+  pivot_wider(names_from = "Period", values_from = "Value") %>%
+  arrange(States, Year)
+
+data <- merge(wheat, temp3, by.x = c("State", "Crop_Year"), by.y = c("States", "Year"), all.x = TRUE)
+data <- merge(data, price_new_final, by.x = c("State", "Crop_Year"), by.y = c("admin1", "year"), all.x = TRUE)
+
+```
+
+
+
+
+```{r}
+data <- na.omit(data)
+data <- data[-c(1,3,4)]
+```
+
+```{r}
+colnames(data)
+```
+
+```{r}
+x <- data %>%
+  dplyr::select(Crop_Year, Area, Annual_Rainfall, Fertilizer, Pesticide, Annual)
+
+
+y <- data %>%
+  dplyr::select(Yield, Production, mean_price)
+
+
+```
+```{r}
+ggpairs(x)
+```
+
+
+```{r}
+ggpairs(y)
+```
+```{r}
+matcor(x, y)
+```
+```{r}
+cc1 <- cc(x, y)
+
+cc1$cor
+```
+
+
+```{r}
+cc1[3:4]
+```
+```{r}
+m <- cor(data)
+corrplot(m, method = 'circle')
+```
+```{r}
+ggpairs(data)
+```
+

@@ -1,0 +1,122 @@
+---
+title: "Mini Project 2"
+author: "S18827"
+date: "2024-05-18"
+output: html_document
+---
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(GGally)
+library(psych)
+library(CCA)
+library(CCP)
+```
+
+```{r}
+data <- read_csv("../Data/Data/Algerian_forest_fires_dataset_UPDATE.csv", col_types = 'iiiiiidddddddcc')
+data <- data %>%
+  mutate(Classes = ifelse(Classes == "fire", 1, 0))
+
+data <- na.omit(data) 
+```
+```{r}
+x <- data[, 4:7]
+summary(x)
+```
+
+
+```{r}
+y <- data[, 8:14]
+summary(y)
+```
+
+
+
+```{r}
+data <- read_csv("../Data/led.csv")
+
+
+data <- na.omit(data) 
+
+x <- data %>% dplyr::select("Lifeexpectancy", "AdultMortality", "infantdeaths", "BMI", "under-fivedeaths", "HIV/AIDS", "thinness1-19years", "thinness5-9years")             
+ 
+y <- data %>% dplyr::select("Alcohol", "percentageexpenditure", "HepatitisB", "Measles", "Polio", "Totalexpenditure", "Diphtheria", "GDP", "Population", "Incomecompositionofresources", "Schooling")
+```
+
+
+
+```{r}
+var(x)
+ggpairs(x)
+```
+```{r}
+var(y)
+ggpairs(y)
+```
+
+```{r}
+cov(x,y)
+```
+```{r}
+correl <- matcor(x, y )
+img.matcor(correl, type = 2)
+```
+
+
+```{r}
+canonical_cor <- cc(x, y)
+
+canonical_cor$cor
+```
+
+
+```{r}
+data <- read_csv("../Data/cancer patient data sets.csv")
+x <- data %>% 
+  dplyr :: select("Air Pollution", "Alcohol use", "Dust Allergy", "OccuPational Hazards", "Genetic Risk", "Balanced Diet", "Obesity", "Smoking", "Passive Smoker", "Snoring")
+y <- data %>%
+  dplyr::select("chronic Lung Disease", "Chest Pain", "Coughing of Blood", "Fatigue", "Weight Loss", "Shortness of Breath", "Wheezing", "Swallowing Difficulty", "Clubbing of Finger Nails", "Frequent Cold", "Dry Cough")
+
+```
+
+
+
+
+
+
+```{r}
+canonical_cor[3:4]
+```
+```{r}
+# compute canonical loadings
+cc2 <- comput(x, y, canonical_cor)
+
+# display canonical loadings
+cc2[3:6]
+```
+
+```{r}
+# tests of canonical dimensions
+rho <- canonical_cor$cor
+## Define number of observations, number of variables in first set, and number of variables in the second set.
+n <- dim(x)[1]
+p <- length(x)
+q <- length(y)
+
+## Calculate p-values using the F-approximations of different test statistics:
+p.asym(rho, n, p, q, tstat = "Wilks")
+p.asym(rho, n, p, q, tstat = "Hotelling")
+p.asym(rho, n, p, q, tstat = "Pillai")
+p.asym(rho, n, p, q, tstat = "Roy")
+
+# standardized psych canonical coefficients diagonal matrix of psych sd's
+s1 <- diag(sqrt(diag(cov(x))))
+s1 %*% canonical_cor$xcoef
+
+# standardized acad canonical coefficients diagonal matrix of acad sd's
+s2 <- diag(sqrt(diag(cov(y))))
+s2 %*% canonical_cor$ycoef
+```
+
